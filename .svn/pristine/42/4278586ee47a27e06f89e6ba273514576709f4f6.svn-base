@@ -1,0 +1,16 @@
+package in.grse.gem.services;
+
+import in.grse.gem.dtos.requests.InvoiceDetailsRequestDto;
+import in.grse.gem.dtos.requests.InvoiceSummaryRequestDto;
+import in.grse.gem.dtos.responses.InvoiceDetailsDecryptedResponseDto;
+import in.grse.gem.dtos.responses.InvoiceSummaryDecryptedResponseDto;
+import in.grse.gem.dtos.responses.LoginResponseDto;
+
+public interface GemService {
+
+    LoginResponseDto login();
+    InvoiceSummaryDecryptedResponseDto getInvoiceSummary(
+            InvoiceSummaryRequestDto requestDto);
+
+    InvoiceDetailsDecryptedResponseDto getInvoiceDetails(InvoiceDetailsRequestDto requestDto);
+}

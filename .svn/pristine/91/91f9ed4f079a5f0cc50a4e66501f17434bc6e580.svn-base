@@ -1,0 +1,279 @@
+package in.grse.gem.services.impl;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import in.grse.gem.dtos.requests.*;
+import in.grse.gem.dtos.responses.*;
+import in.grse.gem.services.GemService;
+import in.grse.gem.util.AESUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static javax.crypto.Cipher.SECRET_KEY;
+
+@Slf4j
+@Service
+public class GemServiceImpl implements GemService {
+
+    private static final String GEM_URL = "https://api.gemorion.org/erp/webs/";
+
+    @Value("${gem.secret.key}")
+    private String secretKey;
+    @Value("${gem.username}")
+    private String username;
+    @Value("${gem.password}")
+    private String password;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Override
+    public LoginResponseDto login() {
+
+        log.info("Calling GeM Login API");
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Prepare request body
+        LoginRequestDto request = new LoginRequestDto();
+        request.setUser(username);
+        request.setPass(password);
+        request.setMethod("login");
+
+        // Headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<LoginRequestDto> entity = new HttpEntity<>(request, headers);
+
+        try {
+            ResponseEntity<String> response =
+                    restTemplate.exchange(
+                            GEM_URL,
+                            HttpMethod.POST,
+                            entity,
+                            String.class
+                    );
+
+            return mapper.readValue(response.getBody(), LoginResponseDto.class);
+
+        } catch (Exception e) {
+            log.error("Error calling GeM API", e);
+
+            LoginResponseDto error = new LoginResponseDto();
+            error.setStatus("error");
+            return error;
+        }
+    }
+
+    @Override
+    public InvoiceSummaryDecryptedResponseDto getInvoiceSummary(InvoiceSummaryRequestDto requestDto) {
+        log.info("Starting GeM Invoice Summary Flow");
+
+        try {
+            // ✅ Step 1: Login & get token
+            LoginResponseDto token = login();
+
+            // ✅ Step 2: Call Invoice API
+            String encryptedResponse = callInvoiceApi(requestDto, token.getToken());
+
+            // ✅ Step 3: Extract & decrypt
+            JsonNode root = mapper.readTree(encryptedResponse);
+            String encryptedData = root.get("data").asText();
+
+            String decryptedJson = AESUtil.decrypt(encryptedData, secretKey);
+
+            log.info("Decrypted Response: {}", decryptedJson);
+
+            // ✅ Step 4: Convert to DTO
+            return mapper.readValue(decryptedJson, InvoiceSummaryDecryptedResponseDto.class);
+
+        } catch (Exception e) {
+            log.error("Error in GeM flow", e);
+            throw new RuntimeException("GeM API failed", e);
+        }
+    }
+
+    /**
+     * @param requestDto
+     * @return
+     */
+    @Override
+    public InvoiceDetailsDecryptedResponseDto getInvoiceDetails(InvoiceDetailsRequestDto requestDto) {
+        log.info("Calling GeM getInvoice API");
+
+        try {
+            // ✅ Step 1: Login → get token
+            LoginResponseDto token = login();
+
+            // ✅ Step 2: Prepare request
+            requestDto.setUser(requestDto.getUser());
+            requestDto.setMethod("getInvoice");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("authorization", token.getToken());
+
+            // Optional (if required like curl)
+//            headers.set("Cookie", "ci_session=pummi1endsdmbe93ddmngjg6gi1ik3g0");
+
+            HttpEntity<InvoiceDetailsRequestDto> entity =
+                    new HttpEntity<>(requestDto, headers);
+
+            // ✅ Step 3: Call API
+            ResponseEntity<String> response =
+                    restTemplate.exchange(GEM_URL, HttpMethod.POST, entity, String.class);
+
+            // ✅ Step 4: Extract encrypted data
+            JsonNode root = mapper.readTree(response.getBody());
+            String encryptedData = root.get("data").asText();
+
+            // ✅ Step 5: Decrypt
+            String decryptedJson = AESUtil.decrypt(encryptedData, secretKey);
+
+            log.info("Decrypted Response: {}", decryptedJson);
+
+            // ✅ Step 6: Convert to DTO
+            return mapper.readValue(decryptedJson, InvoiceDetailsDecryptedResponseDto.class);
+
+        } catch (Exception e) {
+            log.error("Error calling getInvoice API", e);
+            throw new RuntimeException("GeM getInvoice API failed", e);
+        }
+    }
+
+    /**
+     * @param requestDto
+     * @return
+     */
+    @Override
+    public PaymentResponseDto makePayment(PaymentRequestDto requestDto) {
+        try {
+            LoginResponseDto token = login();
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            // Step 1: Convert DTO → Map
+            Map map = mapper.convertValue(requestDto, Map.class);
+
+            // Remove user & method
+            map.remove("user");
+            map.remove("method");
+
+            // Step 2: Create paydata JSON
+            String payDataJson = mapper.writeValueAsString(map);
+
+            // Step 3: Encrypt
+            String encryptedPayData = AESUtil.encrypt(payDataJson, secretKey);
+
+            // Step 4: Final request
+            Map<String, Object> finalRequest = new HashMap<>();
+            finalRequest.put("user", requestDto.getUser());
+            finalRequest.put("method", requestDto.getMethod());
+            finalRequest.put("paydata", encryptedPayData);
+
+            // Step 5: Headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("authorization", token.getToken());
+
+            HttpEntity<Map<String, Object>> entity =
+                    new HttpEntity<>(finalRequest, headers);
+
+            // Step 6: Call GeM API (DIRECT DTO mapping)
+            ResponseEntity<PaymentResponseDto> response =
+                    restTemplate.exchange(
+                            GEM_URL,
+                            HttpMethod.POST,
+                            entity,
+                            PaymentResponseDto.class
+                    );
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Payment API failed", e);
+        }
+    }
+
+    /**
+     * @param requestDto
+     * @return
+     */
+    @Override
+    public OrdersResponseDto getOrderDetails(OrdersRequestDto requestDto) {
+        log.info("Calling GeM getOrders API");
+
+        try {
+            // ✅ Step 1: Login → get token
+            LoginResponseDto token = login();
+
+            // ✅ Step 2: Prepare request
+            requestDto.setUser(requestDto.getUser());
+            requestDto.setMethod("getOrders");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("authorization", token.getToken());
+
+            // Optional (if required like curl)
+//            headers.set("Cookie", "ci_session=pdqvt9h806gnhki52n1opm1gflcrj4lu");
+
+            HttpEntity<OrdersRequestDto> entity =
+                    new HttpEntity<>(requestDto, headers);
+
+            // ✅ Step 3: Call API
+            ResponseEntity<String> response =
+                    restTemplate.exchange(
+                            GEM_URL,
+                            HttpMethod.POST,
+                            entity,
+                            String.class
+                    );
+
+            // ✅ Step 4: Extract encrypted data
+            JsonNode root = mapper.readTree(response.getBody());
+            String encryptedData = root.get("data").asText();
+
+            // ✅ Step 5: Decrypt
+            String decryptedJson = AESUtil.decrypt(encryptedData, secretKey);
+
+            log.info("Decrypted Response: {}", decryptedJson);
+
+            // ✅ Step 6: Convert to DTO
+            return mapper.readValue(decryptedJson, OrdersResponseDto.class);
+
+        } catch (Exception e) {
+            log.error("Error calling getOrders API", e);
+            throw new RuntimeException("GeM getOrders API failed", e);
+        }
+    }
+
+
+    // 📄 INVOICE API CALL
+    private String callInvoiceApi(InvoiceSummaryRequestDto requestDto, String token) {
+
+        requestDto.setUser(requestDto.getUser());
+        requestDto.setMethod("invoiceSummary");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // ⚠️ Based on your curl → NOT Bearer
+        headers.set("authorization", token);
+
+        HttpEntity<InvoiceSummaryRequestDto> entity =
+                new HttpEntity<>(requestDto, headers);
+
+        ResponseEntity<String> response =
+                restTemplate.exchange(GEM_URL, HttpMethod.POST, entity, String.class);
+
+        return response.getBody();
+    }
+}

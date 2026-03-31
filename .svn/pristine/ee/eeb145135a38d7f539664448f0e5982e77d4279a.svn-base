@@ -1,0 +1,29 @@
+spring.application.name=gem
+
+# ===============================
+# = DATABASE CONFIG (POSTGRES)
+# ===============================
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/gem
+spring.datasource.username=postgres
+spring.datasource.password=
+
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# ===============================
+# = JPA / HIBERNATE
+# ===============================
+
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=update
+
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# ===============================
+# = GEM
+# ===============================
+gem.url=https://api.gemorion.org/erp/webs/ 
+gem.username=DEMO
+gem.password=f90903562fe1ff60154f46c12b8d8a68
+gem.secret.key=qcNv4GRqj40WdqhY
