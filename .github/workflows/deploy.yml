@@ -23,11 +23,7 @@ jobs:
 
       - name: Build JAR
         run: |
-          docker run --rm \
-          -v ${{ github.workspace }}:/app \
-          -w /app \
-          maven:3.9.9-eclipse-temurin-21 \
-          mvn clean package -DskipTests
+          docker run --rm -v %cd%:/app -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package
 
       - name: Build Docker Image
         run: docker build -t $IMAGE_NAME:dev .
