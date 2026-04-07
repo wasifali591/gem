@@ -1,0 +1,80 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - development
+      - main
+
+env:
+  IMAGE_NAME: gem-app
+  CONTAINER_NAME: gem-container
+
+jobs:
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/development'
+    runs-on: self-hosted
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build JAR
+        run: |
+          docker run --rm \
+          -v ${{ github.workspace }}:/app \
+          -w /app \
+          maven:3.9.9-eclipse-temurin-21 \
+          mvn clean package -DskipTests
+
+      - name: Build Docker Image
+        run: docker build -t $IMAGE_NAME:dev .
+
+      - name: Stop Old Container
+        run: docker stop $CONTAINER_NAME-dev || true
+
+      - name: Remove Old Container
+        run: docker rm $CONTAINER_NAME-dev || true
+
+      - name: Run Container
+        run: |
+          docker run -d \
+          -p 8082:8080 \
+          --name $CONTAINER_NAME-dev \
+          $IMAGE_NAME:dev
+
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build JAR
+        run: |
+          docker run --rm \
+          -v ${{ github.workspace }}:/app \
+          -w /app \
+          maven:3.9.9-eclipse-temurin-21 \
+          mvn clean package -DskipTests
+
+      - name: Build Docker Image
+        run: docker build -t $IMAGE_NAME:prod .
+
+      - name: Stop Old Container
+        run: docker stop $CONTAINER_NAME-prod || true
+
+      - name: Remove Old Container
+        run: docker rm $CONTAINER_NAME-prod || true
+
+      - name: Run Container
+        run: |
+          docker run -d \
+          -p 8081:8080 \
+          --name $CONTAINER_NAME-prod \
+          $IMAGE_NAME:prod
