@@ -43,3 +43,6 @@ Thumbs.db
 
 # Env files
 .env
+
+#github action
+actions-runner/
