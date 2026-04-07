@@ -14,6 +14,13 @@ public class ExcelController {
 
     private final DynamicExcelService dynamicExcelService;
 
+    /**
+     * Excel generate
+     * 
+     * @param json
+     * @return
+     * @throws Exception
+     */
     @PostMapping("/generate")
     public ResponseEntity<byte[]> generateExcel(@RequestBody String json) throws Exception {
 
