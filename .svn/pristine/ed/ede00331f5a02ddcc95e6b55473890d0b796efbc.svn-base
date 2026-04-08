@@ -1,0 +1,20 @@
+package in.grse.gem.services;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import in.grse.gem.dtos.requests.*;
+import in.grse.gem.dtos.responses.*;
+
+public interface GemService {
+
+    LoginResponseDto login();
+    InvoiceSummaryDecryptedResponseDto getInvoiceSummary(
+            InvoiceSummaryRequestDto requestDto);
+
+    InvoiceDetailsDecryptedResponseDto getInvoiceDetails(InvoiceDetailsRequestDto requestDto);
+
+    PaymentResponseDto makePayment(PaymentRequestDto requestDto);
+
+    OrdersResponseDto getOrderDetails(OrdersRequestDto requestDto);
+
+    JsonNode getBillDetails(BillsRequestDto request);
+}
