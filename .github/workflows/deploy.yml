@@ -29,14 +29,16 @@ jobs:
         run: docker build -t gem:dev .
 
       - name: Stop Old Container
-        run: docker stop gem-dev || true
+        continue-on-error: true
+        run: docker stop ${env:CONTAINER_NAME}-dev
 
       - name: Remove Old Container
-        run: docker rm gem-dev || true
+        continue-on-error: true
+        run: docker rm ${env:CONTAINER_NAME}-dev
 
       - name: Run Container
         run: |
-          docker run -d -p 8082:8080 --name gem-dev gem:dev
+          docker run -d -p 8082:8080 --name ${env:CONTAINER_NAME}-dev gem:dev
 
 
   deploy-prod:
