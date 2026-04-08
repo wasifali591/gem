@@ -17,8 +17,8 @@ public class ExcelController {
     /**
      * Excel generate
      *
-     * @param json
-     * @return
+     * @param json json data based on which the excel sheet will be generated
+     * @return A pdf file
      * @throws Exception
      */
     @PostMapping("/generate")
