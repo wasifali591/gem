@@ -26,20 +26,17 @@ jobs:
           docker run --rm -v ${PWD}:/app -w /app maven:3.9.6-eclipse-temurin-21 mvn clean package
 
       - name: Build Docker Image
-        run: docker build -t %IMAGE_NAME%:dev .
+        run: docker build -t gem:dev .
 
       - name: Stop Old Container
-        run: docker stop $CONTAINER_NAME-dev || true
+        run: docker stop gem-dev || true
 
       - name: Remove Old Container
-        run: docker rm $CONTAINER_NAME-dev || true
+        run: docker rm gem-dev || true
 
       - name: Run Container
         run: |
-          docker run -d \
-          -p 8082:8080 \
-          --name $CONTAINER_NAME-dev \
-          $IMAGE_NAME:dev
+          docker run -d -p 8082:8080 --name gem-dev gem:dev
 
 
   deploy-prod:
