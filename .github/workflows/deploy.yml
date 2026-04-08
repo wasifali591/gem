@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Container
         run: |
-          docker run -d -p 8082:8080 --name ${env:CONTAINER_NAME}-dev gem:dev
+          docker run -d -p 8080:8080 --name ${env:CONTAINER_NAME}-dev gem:dev
 
 
   deploy-prod:
