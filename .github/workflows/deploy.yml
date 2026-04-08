@@ -23,27 +23,22 @@ jobs:
 
       - name: Build JAR
         run: |
-          docker run --rm \
-          -v ${{ github.workspace }}:/app \
-          -w /app \
-          maven:3.9.9-eclipse-temurin-21 \
-          mvn clean package -DskipTests
+          docker run --rm -v ${PWD}:/app -w /app maven:3.9.6-eclipse-temurin-21 mvn clean package
 
       - name: Build Docker Image
-        run: docker build -t $IMAGE_NAME:dev .
+        run: docker build -t gem:dev .
 
       - name: Stop Old Container
-        run: docker stop $CONTAINER_NAME-dev || true
+        continue-on-error: true
+        run: docker stop ${env:CONTAINER_NAME}-dev
 
       - name: Remove Old Container
-        run: docker rm $CONTAINER_NAME-dev || true
+        continue-on-error: true
+        run: docker rm ${env:CONTAINER_NAME}-dev
 
       - name: Run Container
         run: |
-          docker run -d \
-          -p 8082:8080 \
-          --name $CONTAINER_NAME-dev \
-          $IMAGE_NAME:dev
+          docker run -d -p 8080:8080 --name ${env:CONTAINER_NAME}-dev gem:dev
 
 
   deploy-prod:
@@ -57,24 +52,19 @@ jobs:
 
       - name: Build JAR
         run: |
-          docker run --rm \
-          -v ${{ github.workspace }}:/app \
-          -w /app \
-          maven:3.9.9-eclipse-temurin-21 \
-          mvn clean package -DskipTests
+          docker run --rm -v ${PWD}:/app -w /app maven:3.9.6-eclipse-temurin-21 mvn clean package -DskipTests
 
       - name: Build Docker Image
-        run: docker build -t $IMAGE_NAME:prod .
+        run: docker build -t gem:prod .
 
       - name: Stop Old Container
-        run: docker stop $CONTAINER_NAME-prod || true
+        continue-on-error: true
+        run: docker stop ${env:CONTAINER_NAME}-prod
 
       - name: Remove Old Container
-        run: docker rm $CONTAINER_NAME-prod || true
+        continue-on-error: true
+        run: docker rm ${env:CONTAINER_NAME}-prod
 
       - name: Run Container
         run: |
-          docker run -d \
-          -p 8081:8080 \
-          --name $CONTAINER_NAME-prod \
-          $IMAGE_NAME:prod
+          docker run -d -p 8081:8080 --name ${env:CONTAINER_NAME}-prod gem:prod
