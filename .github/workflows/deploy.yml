@@ -14,7 +14,7 @@ jobs:
 
   deploy-dev:
     if: github.ref == 'refs/heads/development'
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, X64]
     environment: development
 
     steps:
