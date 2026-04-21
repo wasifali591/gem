@@ -40,3 +40,11 @@ scrape_configs:
             userId: userId
             service: service
             env: env
+
+      - labels:
+          level:
+          service:
+          method:
+          path:
+          userId:
+          traceId:
