@@ -1,6 +1,6 @@
 <configuration>
 
-    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <springProperty scope="context" name="gem-service" source="spring.application.name"/>
 
     <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
@@ -36,7 +36,7 @@
 
                 <globalCustomFields>
                     {
-                    "service":"${appName}",
+                    "service":"gem-service",
                     "env":"local"
                     }
                 </globalCustomFields>
