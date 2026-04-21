@@ -1,11 +1,52 @@
 <configuration>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                </timestamp>
+
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                </loggerName>
+
+                <threadName>
+                    <fieldName>thread</fieldName>
+                </threadName>
+
+                <message>
+                    <fieldName>message</fieldName>
+                </message>
+
+                <mdc/>
+
+                <arguments/>
+
+                <stackTrace>
+                    <fieldName>exception</fieldName>
+                </stackTrace>
+
+                <globalCustomFields>
+                    {
+                    "service":"${appName}",
+                    "env":"local"
+                    }
+                </globalCustomFields>
+
+            </providers>
+        </encoder>
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="JSON"/>
     </root>
 
 </configuration>
