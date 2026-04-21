@@ -23,3 +23,20 @@ scrape_configs:
 
       - target_label: job
         replacement: docker
+
+    pipeline_stages:
+      - docker: {}
+
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            thread: thread
+            message: message
+            traceId: traceId
+            path: path
+            method: method
+            userId: userId
+            service: service
+            env: env
