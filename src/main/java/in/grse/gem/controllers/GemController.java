@@ -6,18 +6,41 @@ import in.grse.gem.dtos.requests.*;
 import in.grse.gem.dtos.responses.*;
 import in.grse.gem.services.GemService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/gem")
 @RequiredArgsConstructor
+@Slf4j
 public class GemController {
 
     private final GemService gemService;
 
     @PostMapping("/login")
     public LoginResponseDto login() {
-        return gemService.login();
+
+        log.info("Login API request received");
+
+        long start = System.currentTimeMillis();
+
+        try {
+            LoginResponseDto response = gemService.login();
+
+            log.info("Login API completed successfully");
+
+            return response;
+
+        } catch (Exception ex) {
+
+            log.error("Login API failed", ex);
+            throw ex;
+
+        } finally {
+            long duration = System.currentTimeMillis() - start;
+
+            log.info("Login API execution completed in {} ms", duration);
+        }
     }
 
 

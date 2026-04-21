@@ -38,7 +38,8 @@ public class GemServiceImpl implements GemService {
     @Override
     public LoginResponseDto login() {
 
-        log.info("Calling GeM Login API");
+        log.info("Calling GeM Login service");
+        long start = System.currentTimeMillis();
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -55,6 +56,8 @@ public class GemServiceImpl implements GemService {
         HttpEntity<LoginRequestDto> entity = new HttpEntity<>(request, headers);
 
         try {
+            log.info("Calling external GeM API");
+
             ResponseEntity<String> response =
                     restTemplate.exchange(
                             GEM_URL,
@@ -62,11 +65,20 @@ public class GemServiceImpl implements GemService {
                             entity,
                             String.class
                     );
+            long duration = System.currentTimeMillis() - start;
 
-            return mapper.readValue(response.getBody(), LoginResponseDto.class);
+            log.info("GeM API responded with status {} in {} ms",
+                    response.getStatusCode(),
+                    duration);
+            LoginResponseDto dto =
+                    mapper.readValue(response.getBody(), LoginResponseDto.class);
+
+            log.info("GeM login successful");
+            return dto;
 
         } catch (Exception e) {
-            log.error("Error calling GeM API", e);
+            long duration = System.currentTimeMillis() - start;
+            log.error("GeM login failed after {} ms", duration, e);
 
             LoginResponseDto error = new LoginResponseDto();
             error.setStatus("error");
