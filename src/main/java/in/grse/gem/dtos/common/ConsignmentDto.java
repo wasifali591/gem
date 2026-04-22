@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import java.util.List;
 
+/**
+ * Consignment DTO 
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConsignmentDto {
