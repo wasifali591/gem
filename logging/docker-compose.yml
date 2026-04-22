@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
 
   loki:
@@ -6,7 +8,8 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - loki-data:/loki
+      - loki:/loki
+    restart: unless-stopped
 
   promtail:
     image: grafana/promtail:2.9.8
@@ -15,10 +18,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./promtail-config.yml:/etc/promtail/config.yml
-      - promtail-data:/tmp
+      - promtail:/tmp
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -26,11 +30,33 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - grafana-data:/var/lib/grafana
+      - grafana:/var/lib/grafana
     depends_on:
       - loki
+    restart: unless-stopped
+
+  jenkins:
+    build:
+      context: ..
+      dockerfile: Dockerfile.jenkins
+    container_name: jenkins
+    user: root
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    environment:
+      - TZ=Asia/Kolkata
+    volumes:
+      - jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 
 volumes:
-  grafana-data:
-  loki-data:
-  promtail-data:
+  grafana:
+    name: grafana
+  loki:
+    name: loki
+  promtail:
+    name: promtail
+  jenkins:
+    name: jenkins
