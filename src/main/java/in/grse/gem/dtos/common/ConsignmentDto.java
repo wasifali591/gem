@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * Consignment DTO for mapping data
+ * Consignment DTO
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
