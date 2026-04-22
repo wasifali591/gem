@@ -25,7 +25,7 @@ public class RequestTraceFilter extends OncePerRequestFilter {
         MDC.put("traceId", traceId);
         MDC.put("path", request.getRequestURI());
         MDC.put("method", request.getMethod());
-
+        MDC.put("service", "gem-service");
         try {
             filterChain.doFilter(request, response);
         } finally {
