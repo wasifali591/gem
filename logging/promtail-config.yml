@@ -29,17 +29,15 @@ scrape_configs:
 
       - json:
           expressions:
-            timestamp: timestamp
             level: level
-            logger: logger
-            thread: thread
-            message: message
-            traceId: traceId
-            path: path
-            method: method
-            userId: userId
             service: service
-            env: env
+            method: method
+            path: path
+            userId: userId
+            traceId: traceId
+
+      - drop:
+          expression: ".*JSONParserErr.*"
 
       - labels:
           level:
@@ -48,4 +46,3 @@ scrape_configs:
           path:
           userId:
           traceId:
-          env:
